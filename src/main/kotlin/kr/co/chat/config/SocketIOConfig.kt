@@ -46,16 +46,20 @@ class SocketIOConfig {
             pingInterval = this@SocketIOConfig.pingInterval
             
             // CORS 설정
-            origin = "*"
+            setOrigin("*")
             
             // 인증 설정 (JWT 토큰 검증)
-            authorizationListener { handshakeData ->
+            setAuthorizationListener { handshakeData ->
                 val token = handshakeData.getSingleUrlParam("token")
                 // TODO: JWT 토큰 검증 로직 구현
-                token != null
+                if (token != null) {
+                    com.corundumstudio.socketio.AuthorizationResult.SUCCESSFUL_AUTHORIZATION
+                } else {
+                    com.corundumstudio.socketio.AuthorizationResult.FAILED_AUTHORIZATION
+                }
             }
         }
         
         return SocketIOServer(config)
     }
-} 
+}

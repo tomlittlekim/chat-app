@@ -1,0 +1,25 @@
+spring:
+  # MongoDB 설정
+  data:
+    mongodb:
+      uri: mongodb://chatuser:chatpassword@localhost:27017/chatdb?authSource=chatdb
+      repositories:
+        enabled: true
+  
+  # Redis 설정 (비밀번호 없음)
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 3000ms
+    jedis:
+      pool:
+        max-active: 100
+        max-idle: 10
+        min-idle: 0
+        max-wait: -1ms
+
+logging:
+  level:
+    kr.co.chat: DEBUG
+    com.corundumstudio.socketio: INFO
+    org.springframework.data.redis: DEBUG 

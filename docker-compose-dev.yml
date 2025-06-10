@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: chat-mongodb-dev
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: chatdb
+    volumes:
+      - mongodb_data_dev:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - chat-network-dev
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: chat-redis-dev
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - chat-network-dev
+
+volumes:
+  mongodb_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+
+networks:
+  chat-network-dev:
+    driver: bridge 

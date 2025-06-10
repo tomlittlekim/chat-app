@@ -11,8 +11,8 @@ import kr.co.chat.service.RedisMessageService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
-import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
 
 @Component
 class SocketIOEventHandler(
@@ -103,7 +103,7 @@ class SocketIOEventHandler(
                     roomId = roomId,
                     senderId = "system",
                     senderName = "System",
-                    content = "$userId님이 입장했습니다.",
+                    content = "${userId}님이 입장했습니다.",
                     type = MessageType.SYSTEM,
                     timestamp = LocalDateTime.now()
                 )
@@ -133,7 +133,7 @@ class SocketIOEventHandler(
                     roomId = roomId,
                     senderId = "system",
                     senderName = "System",
-                    content = "$userId님이 퇴장했습니다.",
+                    content = "${userId}님이 퇴장했습니다.",
                     type = MessageType.SYSTEM,
                     timestamp = LocalDateTime.now()
                 )
@@ -230,4 +230,4 @@ data class TypingData(
 
 data class UserStatusData(
     val status: String
-) 
+)
