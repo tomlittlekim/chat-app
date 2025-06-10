@@ -1,0 +1,217 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chat-app-config
+  namespace: chat-system
+data:
+  application.yml: |
+    server:
+      port: 8080
+    
+    spring:
+      application:
+        name: chat-system
+      
+      # MongoDB 설정
+      data:
+        mongodb:
+          uri: mongodb://admin:password123@mongodb-service:27017/chatdb?authSource=admin
+          repositories:
+            enabled: true
+      
+      # Redis 설정
+      redis:
+        host: redis-service
+        port: 6379
+        timeout: 3000ms
+        jedis:
+          pool:
+            max-active: 100
+            max-idle: 10
+            min-idle: 0
+            max-wait: -1ms
+    
+    # Socket.io 설정
+    socketio:
+      host: 0.0.0.0
+      port: 9092
+      boss-threads: 4
+      worker-threads: 100
+      allow-custom-requests: true
+      upgrade-timeout: 1000
+      ping-timeout: 5000
+      ping-interval: 25000
+    
+    # 채팅 시스템 설정  
+    chat:
+      max-message-length: 1000
+      rate-limit:
+        messages-per-minute: 60
+      rooms:
+        max-users-per-room: 1000
+        max-rooms-per-user: 10
+    
+    # 모니터링 설정
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,metrics,prometheus
+      endpoint:
+        health:
+          show-details: always
+      metrics:
+        export:
+          prometheus:
+            enabled: true
+    
+    logging:
+      level:
+        kr.co.chat: INFO
+        com.corundumstudio.socketio: INFO
+      pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-app
+  namespace: chat-system
+  labels:
+    app: chat-app
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: chat-app
+  template:
+    metadata:
+      labels:
+        app: chat-app
+    spec:
+      containers:
+      - name: chat-app
+        image: chat-system:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9092
+          name: socketio
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: JAVA_OPTS
+          value: "-server -Xmx2g -Xms1g -XX:+UseG1GC -XX:+UseStringDeduplication"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "3Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: config-volume
+        configMap:
+          name: chat-app-config
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-app-service
+  namespace: chat-system
+  labels:
+    app: chat-app
+spec:
+  selector:
+    app: chat-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: socketio
+      port: 9092
+      targetPort: 9092
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-app-loadbalancer
+  namespace: chat-system
+  labels:
+    app: chat-app
+spec:
+  selector:
+    app: chat-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: socketio
+      port: 9092
+      targetPort: 9092
+  type: LoadBalancer
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chat-app-hpa
+  namespace: chat-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chat-app
+  minReplicas: 5
+  maxReplicas: 50
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60 
