@@ -8,6 +8,7 @@ import kr.co.chat.domain.model.Message
 import kr.co.chat.domain.model.MessageType
 import kr.co.chat.service.ChatService
 import kr.co.chat.service.RedisMessageService
+import kr.co.chat.service.RedisMessageListener
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -18,7 +19,8 @@ import jakarta.annotation.PreDestroy
 class SocketIOEventHandler(
     private val socketIOServer: SocketIOServer,
     private val chatService: ChatService,
-    private val redisMessageService: RedisMessageService
+    private val redisMessageService: RedisMessageService,
+    private val redisMessageListener: RedisMessageListener
 ) {
     private val logger = LoggerFactory.getLogger(SocketIOEventHandler::class.java)
 
@@ -97,6 +99,9 @@ class SocketIOEventHandler(
             if (userId != null) {
                 client.joinRoom(roomId)
                 redisMessageService.addUserToRoom(roomId, userId)
+                
+                // Redis 채널 구독 (새로운 채팅방인 경우)
+                redisMessageListener.subscribeToChatRoom(roomId)
                 
                 // 채팅방 입장 시스템 메시지
                 val systemMessage = Message(
@@ -217,17 +222,17 @@ class SocketIOEventHandler(
 
 // 데이터 클래스들
 data class MessageData(
-    val roomId: String,
-    val content: String,
-    val senderName: String,
+    val roomId: String = "",
+    val content: String = "",
+    val senderName: String = "",
     val type: String = "TEXT"
 )
 
 data class TypingData(
-    val roomId: String,
-    val userName: String
+    val roomId: String = "",
+    val userName: String = ""
 )
 
 data class UserStatusData(
-    val status: String
+    val status: String = ""
 )

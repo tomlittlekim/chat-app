@@ -1,5 +1,10 @@
 package kr.co.chat.domain.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.time.LocalDateTime
@@ -17,7 +22,13 @@ data class Message(
     val mentions: Set<String> = emptySet(),
     val replyToId: String? = null,
     val isEdited: Boolean = false,
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
     val editedAt: LocalDateTime? = null,
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
     val timestamp: LocalDateTime = LocalDateTime.now()
 )
 
