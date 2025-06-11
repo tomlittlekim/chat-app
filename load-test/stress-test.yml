@@ -1,0 +1,76 @@
+config:
+  target: 'http://localhost:9092'
+  phases:
+    # 스트레스 테스트: 시스템 한계 찾기
+    - duration: 120   # 2분 웜업
+      arrivalRate: 10
+      rampTo: 500
+    - duration: 300   # 5분 높은 부하
+      arrivalRate: 500
+      rampTo: 1000
+    - duration: 600   # 10분 극한 부하
+      arrivalRate: 1000
+      rampTo: 2000
+    - duration: 300   # 5분 더 높은 부하
+      arrivalRate: 2000
+      rampTo: 5000
+    - duration: 180   # 3분 쿨다운
+      arrivalRate: 5000
+      rampTo: 0
+
+  socketio:
+    transports: ['websocket', 'polling']
+    upgrade: true
+    query:
+      token: 'dummy-token'  # 인증을 위한 토큰 추가
+
+  # 타임아웃 설정 (고부하에서 필요)
+  timeout: 30
+
+scenarios:
+  # 극한 메시지 전송 테스트
+  - name: "극한 메시지 전송"
+    weight: 60
+    engine: socketio
+    flow:
+      - emit:
+          channel: "connect"
+          data:
+            userId: "stress_{{ $randomString() }}"
+            nickname: "StressUser_{{ $randomInt(1, 100000) }}"
+      
+      - emit:
+          channel: "join_room"
+          data: "stress_room_{{ $randomInt(1, 50) }}"
+      
+      # 빠른 메시지 전송 (30초간)
+      - loop:
+          - emit:
+              channel: "send_message"
+              data:
+                roomId: "stress_room_{{ $randomInt(1, 50) }}"
+                content: "스트레스 메시지 {{ $timestamp }}_{{ $randomInt(1, 100000) }}"
+                senderName: "{{ userId }}"
+                type: "TEXT"
+          - think: 0.1  # 매우 짧은 간격
+        count: 300  # 300개 메시지
+      
+      - emit:
+          channel: "disconnect"
+
+  # 대량 연결 스트레스
+  - name: "대량 연결 스트레스"
+    weight: 40
+    engine: socketio
+    flow:
+      - emit:
+          channel: "connect"
+          data:
+            userId: "conn_stress_{{ $randomString() }}"
+            nickname: "ConnStress_{{ $randomInt(1, 1000000) }}"
+      
+      # 장시간 연결 유지
+      - think: 1800  # 30분 연결 유지
+      
+      - emit:
+          channel: "disconnect" 

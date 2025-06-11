@@ -15,7 +15,7 @@ data:
       # MongoDB 설정
       data:
         mongodb:
-          uri: mongodb://admin:password123@mongodb-service:27017/chatdb?authSource=admin
+          uri: mongodb://admin:password123@mongodb-service:27017/chatdb?authSource=admin&ssl=false
           repositories:
             enabled: true
       
@@ -65,6 +65,8 @@ data:
           prometheus:
             enabled: true
     
+
+    
     logging:
       level:
         kr.co.chat: INFO
@@ -81,7 +83,7 @@ metadata:
   labels:
     app: chat-app
 spec:
-  replicas: 5
+  replicas: 1
   selector:
     matchLabels:
       app: chat-app
@@ -103,33 +105,47 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: "prod"
         - name: JAVA_OPTS
-          value: "-server -Xmx2g -Xms1g -XX:+UseG1GC -XX:+UseStringDeduplication"
+          value: "-server -Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication"
+        - name: SPRING_DATA_REDIS_HOST
+          value: "redis-service"
+        - name: SPRING_DATA_REDIS_PORT
+          value: "6379"
+        - name: SPRING_REDIS_HOST
+          value: "redis-service"
+        - name: SPRING_REDIS_PORT
+          value: "6379"
+        - name: SPRING_DATA_MONGODB_URI
+          value: "mongodb://mongodb-service:27017/chatdb"
+        - name: SPRING_SECURITY_USER_NAME
+          value: "admin"
+        - name: SPRING_SECURITY_USER_PASSWORD
+          value: "admin"
         volumeMounts:
         - name: config-volume
           mountPath: /app/config
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
           limits:
-            memory: "3Gi"
-            cpu: "2000m"
+            memory: "1Gi"
+            cpu: "1000m"
         livenessProbe:
           httpGet:
             path: /actuator/health
             port: 8080
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
+          timeoutSeconds: 15
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /actuator/health
             port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
       volumes:
       - name: config-volume
         configMap:
@@ -187,8 +203,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: chat-app
-  minReplicas: 5
-  maxReplicas: 50
+  minReplicas: 1
+  maxReplicas: 3
   metrics:
   - type: Resource
     resource:

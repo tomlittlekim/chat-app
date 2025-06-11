@@ -1,0 +1,116 @@
+config:
+  # 테스트 대상 서버
+  target: 'http://localhost:9092'
+  
+  # 테스트 단계별 설정
+  phases:
+    # 1단계: 점진적 증가 (0 → 1000 동접)
+    - duration: 300  # 5분
+      arrivalRate: 1
+      rampTo: 50
+      name: "웜업 단계"
+    
+    # 2단계: 중간 부하 (1000 → 10000 동접)  
+    - duration: 600  # 10분
+      arrivalRate: 50
+      rampTo: 200
+      name: "중간 부하"
+    
+    # 3단계: 높은 부하 (10000 → 50000 동접)
+    - duration: 900  # 15분
+      arrivalRate: 200
+      rampTo: 500
+      name: "높은 부하"
+    
+    # 4단계: 최대 부하 (50000+ 동접 유지)
+    - duration: 1800 # 30분
+      arrivalRate: 500
+      name: "최대 부하 유지"
+
+  # Socket.io 관련 설정
+  socketio:
+    transports: ['websocket', 'polling']
+    upgrade: true
+    forceNew: true
+    query:
+      token: 'dummy-token'  # 인증을 위한 토큰 추가
+
+  # 성능 메트릭 수집
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+    
+  # 환경 변수
+  environments:
+    dev:
+      target: 'http://localhost:9092'
+    prod:
+      target: 'http://your-production-server:9092'
+
+scenarios:
+  # 실시간 채팅 시나리오
+  - name: "실시간 채팅 테스트"
+    weight: 70
+    engine: socketio
+    flow:
+      # 연결 설정
+      - emit:
+          channel: "connect"
+          data: 
+            userId: "{{ $randomString() }}"
+            nickname: "User_{{ $randomInt(1, 100000) }}"
+      
+      # 채팅방 참여
+      - think: 1
+      - emit:
+          channel: "join_room"
+          data: "room_{{ $randomInt(1, 100) }}"
+      
+      # 메시지 전송 루프 (5분간)
+      - loop:
+          - emit:
+              channel: "send_message"
+              data:
+                roomId: "room_{{ $randomInt(1, 100) }}"
+                content: "테스트 메시지 {{ $randomInt(1, 10000) }}"
+                senderName: "{{ userId }}"
+                type: "TEXT"
+          
+          # 타이핑 시뮬레이션
+          - emit:
+              channel: "typing_start"
+              data:
+                roomId: "room_{{ $randomInt(1, 100) }}"
+                userName: "{{ nickname }}"
+          
+          - think: "{{ $randomInt(1, 5) }}"
+          
+          - emit:
+              channel: "typing_stop"
+              data:
+                roomId: "room_{{ $randomInt(1, 100) }}"
+                userName: "{{ nickname }}"
+          
+          - think: "{{ $randomInt(5, 15) }}"
+        count: 20  # 20번 반복
+      
+      # 연결 종료
+      - emit:
+          channel: "disconnect"
+
+  # 대량 연결만 테스트하는 시나리오  
+  - name: "대량 연결 테스트"
+    weight: 30
+    engine: socketio
+    flow:
+      - emit:
+          channel: "connect"
+          data:
+            userId: "{{ $randomString() }}"
+            nickname: "Conn_{{ $randomInt(1, 1000000) }}"
+      
+      # 연결 유지 (10분)
+      - think: 600
+      
+      - emit:
+          channel: "disconnect" 

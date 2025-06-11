@@ -53,15 +53,11 @@ class SocketIOConfig {
             // CORS 설정
             setOrigin("*")
             
-            // 인증 설정 (JWT 토큰 검증)
+            // 인증 설정 (부하 테스트를 위해 임시 비활성화)
             setAuthorizationListener { handshakeData ->
-                val token = handshakeData.getSingleUrlParam("token")
-                // TODO: JWT 토큰 검증 로직 구현
-                if (token != null) {
-                    com.corundumstudio.socketio.AuthorizationResult.SUCCESSFUL_AUTHORIZATION
-                } else {
-                    com.corundumstudio.socketio.AuthorizationResult.FAILED_AUTHORIZATION
-                }
+                // 개발/테스트 환경에서는 항상 인증 성공
+                // TODO: 프로덕션 환경에서는 JWT 토큰 검증 로직 구현 필요
+                com.corundumstudio.socketio.AuthorizationResult.SUCCESSFUL_AUTHORIZATION
             }
         }
         

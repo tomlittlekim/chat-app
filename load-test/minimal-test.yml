@@ -1,0 +1,35 @@
+config:
+  target: 'http://localhost:9092'
+  phases:
+    # 매우 단순한 테스트
+    - duration: 30   # 30초
+      arrivalRate: 1
+      rampTo: 10     # 최대 10명만
+
+  # 엄격한 타임아웃
+  timeout: 5  # 5초 타임아웃
+
+  socketio:
+    transports: ['websocket']
+    query:
+      token: 'dummy-token'
+    # 매우 짧은 타임아웃
+    connectTimeout: 3000    # 3초
+    ackTimeout: 2000        # 2초
+
+scenarios:
+  - name: "최소 연결 테스트"
+    engine: socketio
+    flow:
+      # 연결만 하고 즉시 종료
+      - emit:
+          channel: "connect"
+          data:
+            userId: "minimal_{{ $randomInt(1, 100) }}"
+            nickname: "MinimalUser_{{ $randomInt(1, 100) }}"
+      
+      # 1초 대기 후 즉시 종료
+      - think: 1
+      
+      - emit:
+          channel: "disconnect" 

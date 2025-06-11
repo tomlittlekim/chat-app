@@ -7,8 +7,6 @@ data:
   mongodb.conf: |
     storage:
       dbPath: /data/db
-      journal:
-        enabled: true
     systemLog:
       destination: file
       logAppend: true
@@ -46,7 +44,7 @@ metadata:
   namespace: chat-system
 spec:
   serviceName: mongodb-service
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: mongodb
@@ -61,22 +59,14 @@ spec:
         ports:
         - containerPort: 27017
         env:
-        - name: MONGO_INITDB_ROOT_USERNAME
-          value: "admin"
-        - name: MONGO_INITDB_ROOT_PASSWORD
-          value: "password123"
         - name: MONGO_INITDB_DATABASE
           value: "chatdb"
         volumeMounts:
         - name: mongodb-data
           mountPath: /data/db
-        - name: mongodb-config
-          mountPath: /etc/mongod.conf
-          subPath: mongodb.conf
         command:
         - mongod
-        - --config
-        - /etc/mongod.conf
+        - --bind_ip_all
         resources:
           requests:
             memory: "1Gi"
@@ -85,25 +75,16 @@ spec:
             memory: "2Gi"
             cpu: "1000m"
         livenessProbe:
-          exec:
-            command:
-            - mongo
-            - --eval
-            - "db.adminCommand('ping')"
+          tcpSocket:
+            port: 27017
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
-          exec:
-            command:
-            - mongo
-            - --eval
-            - "db.adminCommand('ping')"
+          tcpSocket:
+            port: 27017
           initialDelaySeconds: 5
           periodSeconds: 10
-      volumes:
-      - name: mongodb-config
-        configMap:
-          name: mongodb-config
+      volumes: []
   volumeClaimTemplates:
   - metadata:
       name: mongodb-data

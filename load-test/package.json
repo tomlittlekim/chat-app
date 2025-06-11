@@ -1,0 +1,26 @@
+{
+  "name": "chat-load-test",
+  "version": "1.0.0",
+  "description": "대용량 트래픽 테스트 도구",
+  "scripts": {
+    "install-tools": "echo 'npx를 사용하므로 별도 설치 불필요'",
+    "test:quick": "npx artillery@latest run quick-test.yml",
+    "test:load": "npx artillery@latest run artillery-config.yml",
+    "test:stress": "npx artillery@latest run stress-test.yml",
+    "test:custom": "npx artillery@latest run artillery-config.yml --environment",
+    "report": "npx artillery@latest report",
+    "monitor": "npx artillery@latest run artillery-config.yml --output load-test-report.json"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.0"
+  },
+  "keywords": [
+    "load-test",
+    "socket.io", 
+    "artillery",
+    "chat",
+    "performance"
+  ],
+  "author": "Chat Team",
+  "license": "MIT"
+} 

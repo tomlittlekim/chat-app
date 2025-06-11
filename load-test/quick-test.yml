@@ -1,0 +1,48 @@
+config:
+  target: 'http://localhost:9092'
+  phases:
+    # 빠른 테스트 (5분)
+    - duration: 60   # 1분 웜업
+      arrivalRate: 1
+      rampTo: 10
+    - duration: 180  # 3분 테스트
+      arrivalRate: 10
+      rampTo: 100
+    - duration: 60   # 1분 쿨다운
+      arrivalRate: 100
+      rampTo: 1
+
+  socketio:
+    transports: ['websocket']
+    query:
+      token: 'dummy-token'  # 인증을 위한 토큰 추가
+
+scenarios:
+  - name: "빠른 채팅 테스트"
+    engine: socketio
+    flow:
+      - emit:
+          channel: "connect"
+          data:
+            userId: "test_{{ $randomInt(1, 10000) }}"
+            nickname: "TestUser_{{ $randomInt(1, 1000) }}"
+      
+      # join_room은 String만 보냄 (roomId)
+      - emit:
+          channel: "join_room"
+          data: "test_room_1"
+      
+      - loop:
+          # send_message는 객체로 보냄
+          - emit:
+              channel: "send_message"
+              data:
+                roomId: "test_room_1"
+                content: "빠른 테스트 메시지 {{ $randomInt(1, 1000) }}"
+                senderName: "{{ userId }}"
+                type: "TEXT"
+          - think: 2
+        count: 5
+      
+      - emit:
+          channel: "disconnect" 
