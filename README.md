@@ -111,11 +111,8 @@ cd chat
 # Minikube 시작
 minikube start
 
-# 전체 시스템 배포
+# 원클릭 배포 및 자동 실행 (브라우저 자동 열림)
 ./k8s/deploy-minikube.sh
-
-# 포트 포워딩으로 접속
-kubectl port-forward service/chat-app-service 8080:8080 9092:9092 -n chat-system
 ```
 
 3. **개발 환경 실행 (Docker Compose)**
@@ -250,11 +247,8 @@ val config = Configuration().apply {
 
 #### 로컬 개발 환경 (Minikube)
 ```bash
-# Minikube 전용 배포 스크립트
+# 원클릭 배포 및 자동 실행 (브라우저까지 자동 열림)
 ./k8s/deploy-minikube.sh
-
-# 포트 포워딩으로 접속
-kubectl port-forward service/chat-app-service 8080:8080 9092:9092 -n chat-system
 
 # 간단한 정리
 ./cleanup.sh
