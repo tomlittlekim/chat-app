@@ -25,12 +25,14 @@
             width: 90%;
             max-width: 800px;
             height: 80vh;
+            min-height: 500px;
             background: white;
             border-radius: 15px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
 
         .chat-header {
@@ -92,6 +94,27 @@
             padding: 20px;
             overflow-y: auto;
             background: #f8f9fa;
+            min-height: 0;
+            max-height: calc(100% - 200px);
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f8f9fa;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f8f9fa;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #5a6fd8;
         }
 
         .message {
@@ -100,6 +123,12 @@
             border-radius: 18px;
             max-width: 70%;
             word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.own {
@@ -135,6 +164,10 @@
             border-top: 1px solid #e1e5e9;
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
         }
 
         .chat-input input {
@@ -171,6 +204,10 @@
             font-style: italic;
             color: #666;
             font-size: 14px;
+            flex-shrink: 0;
+            background: white;
+            border-top: 1px solid #f0f0f0;
+            min-height: 20px;
         }
 
         .hidden {
@@ -181,6 +218,7 @@
             padding: 20px;
             background: #f8f9fa;
             border-bottom: 1px solid #e1e5e9;
+            flex-shrink: 0;
         }
 
         .room-selector select {
@@ -363,7 +401,14 @@
             }
             
             messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // 부드러운 스크롤
+            setTimeout(() => {
+                messagesDiv.scrollTo({
+                    top: messagesDiv.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
         }
 
         function addSystemMessage(content) {
